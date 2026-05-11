@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package nautilus.metrics;
+
+option go_package = "/pb";
+
+// MetricPayload is the top-level container for a batch of metrics
+message MetricPayload {
+  string tentacle_id = 1;   // Unique ID of the tentacle instance
+  string service = 2;       // Name of the service being proxied
+  int64 timestamp_ms = 3;   // Unix timestamp in milliseconds
+  repeated Metric metrics = 4;
+}
+
+// Metric represents a single measurement
+message Metric {
+  string name = 1;          // Name of the metric (e.g., "tentacle_relay_requests_total")
+  
+  enum Type {
+    COUNTER = 0;
+    GAUGE = 1;
+    HISTOGRAM = 2;
+  }
+  Type type = 2;
+
+  double value = 3;         // Current value for Counter and Gauge
+  map<string, string> labels = 4; // Dimensions
+
+  // Buckets for Histogram type
+  repeated Bucket buckets = 5;
+}
+
+// Bucket represents a single histogram bucket
+message Bucket {
+  double le = 1;            // Less than or equal to (upper bound)
+  uint64 count = 2;         // Cumulative count of observations
+}

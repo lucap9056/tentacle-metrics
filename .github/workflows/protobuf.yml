@@ -1,0 +1,59 @@
+name: Compile Protobuf
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.proto"
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.repository == 'nautilusUDS/tentacle-metrics'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.6"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Generators
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+      - name: Compile Protobuf
+        run: |
+          mkdir -p pb
+          protoc --go_out=. --go_opt=paths=import metrics.proto
+          cargo build
+
+      - name: Commit and Push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f pb/
+
+          if ! git diff --cached --exit-code; then
+          git commit -m "chore: auto-generate pb files [skip ci]"
+          git push
+          else
+              echo "No changes in PB files"
+          fi

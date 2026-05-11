@@ -1,4 +1,4 @@
-module tentacle-metrics
+module github.com/nautilusUDS/tentacle-metrics
 
 go 1.25.6
 
